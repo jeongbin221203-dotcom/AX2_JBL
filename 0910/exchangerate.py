@@ -7,7 +7,7 @@ import streamlit as st
 from dotenv import load_dotenv
 
 # ==========================================
-# 0. 환경 변수 및 페이지 설정 (로컬 .env 및 Cloud Secrets 동시 지원)
+# 0. 환경 변수 및 페이지 설정 (절대 경로 추적)
 # ==========================================
 current_dir = os.path.dirname(os.path.abspath(__file__))
 parent_dir = os.path.dirname(current_dir)
@@ -15,7 +15,7 @@ env_path = os.path.join(parent_dir, ".env")
 
 load_dotenv(dotenv_path=env_path)
 
-# Streamlit Cloud의 st.secrets에서 먼저 찾고, 없으면 로컬 os.getenv(.env)에서 가져옴
+# 1. API_KEY를 먼저 정의합니다.
 API_KEY = None
 try:
     if "EXCHANGE_API_KEY" in st.secrets:
@@ -25,6 +25,10 @@ except Exception:
 
 if not API_KEY:
     API_KEY = os.getenv("EXCHANGE_API_KEY")
+
+# 2. 정의된 이후에 디버깅 출력을 수행합니다.
+print(f"디버깅 - .env 경로: {env_path}")
+print(f"디버깅 - 불러온 API_KEY: {API_KEY}")
 
 st.set_page_config(
     page_title="실시간 환율 계산기 & 트렌드",
