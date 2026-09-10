@@ -7,7 +7,7 @@ import streamlit as st
 from dotenv import load_dotenv
 
 # ==========================================
-# 0. 환경 변수 및 페이지 설정 (절대 경로 추적)
+# 0. 환경 변수 및 페이지 설정 (로컬 .env 및 Cloud Secrets 동시 지원)
 # ==========================================
 current_dir = os.path.dirname(os.path.abspath(__file__))
 parent_dir = os.path.dirname(current_dir)
@@ -15,7 +15,16 @@ env_path = os.path.join(parent_dir, ".env")
 
 load_dotenv(dotenv_path=env_path)
 
-API_KEY = os.getenv("EXCHANGE_API_KEY")
+# Streamlit Cloud의 st.secrets에서 먼저 찾고, 없으면 로컬 os.getenv(.env)에서 가져옴
+API_KEY = None
+try:
+    if "EXCHANGE_API_KEY" in st.secrets:
+        API_KEY = st.secrets["EXCHANGE_API_KEY"]
+except Exception:
+    pass
+
+if not API_KEY:
+    API_KEY = os.getenv("EXCHANGE_API_KEY")
 
 st.set_page_config(
     page_title="실시간 환율 계산기 & 트렌드",
@@ -93,7 +102,7 @@ st.markdown("<p class='sub-title'>ExchangeRate-API를 활용한 환산 및 1개�
 # 3. API 데이터 로드 및 로직
 # ==========================================
 if not API_KEY:
-    st.error("⚠️ API 키를 찾을 수 없습니다. 상위 폴더에 `.env` 파일과 `EXCHANGE_API_KEY` 설정이 올바른지 확인해주세요.")
+    st.error("⚠️ API 키를 찾을 수 없습니다. Streamlit Cloud의 App Settings -> Secrets에서 `EXCHANGE_API_KEY`를 설정해주세요.")
 else:
     @st.cache_data(ttl=3600)
     def fetch_exchange_rates():
