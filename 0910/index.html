@@ -1,0 +1,384 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>대한민국 맞춤형 여행 가이드</title>
+    <style>
+        :root {
+            --primary-color: #2b6cb0;
+            --secondary-color: #319795;
+            --accent-color: #dd6b20;
+            --bg-color: #f7fafc;
+            --card-bg: #ffffff;
+            --text-color: #2d3748;
+            --text-light: #718096;
+            --border-color: #e2e8f0;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Apple SD Gothic Neo', 'Malgun Gothic', sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            line-height: 1.6;
+            padding: 20px;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 40px;
+            padding: 30px;
+            background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+            color: white;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+
+        header h1 {
+            font-size: 2.2rem;
+            margin-bottom: 10px;
+        }
+
+        header p {
+            font-size: 1.1rem;
+            opacity: 0.9;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        section {
+            margin-bottom: 50px;
+        }
+
+        h2 {
+            font-size: 1.6rem;
+            color: var(--primary-color);
+            border-bottom: 3px solid var(--primary-color);
+            padding-bottom: 10px;
+            margin-bottom: 25px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+            gap: 20px;
+        }
+
+        .card {
+            background-color: var(--card-bg);
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+            padding: 20px;
+            transition: transform 0.2s, box-shadow 0.2s;
+            border-top: 5px solid var(--secondary-color);
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+        }
+
+        .card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 15px rgba(0, 0, 0, 0.1);
+        }
+
+        .card h3 {
+            font-size: 1.3rem;
+            color: var(--text-color);
+            margin-bottom: 12px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .badge {
+            font-size: 0.75rem;
+            background-color: #e2e8f0;
+            color: var(--text-light);
+            padding: 3px 8px;
+            border-radius: 12px;
+            font-weight: normal;
+        }
+
+        .card p {
+            font-size: 0.95rem;
+            color: var(--text-light);
+            margin-bottom: 15px;
+        }
+
+        .info-list {
+            list-style: none;
+            font-size: 0.9rem;
+            border-top: 1px solid var(--border-color);
+            padding-top: 12px;
+        }
+
+        .info-list li {
+            margin-bottom: 6px;
+            display: flex;
+        }
+
+        .info-list .label {
+            font-weight: bold;
+            color: var(--text-color);
+            width: 75px;
+            flex-shrink: 0;
+        }
+
+        .info-list .value {
+            color: var(--text-light);
+        }
+
+        footer {
+            text-align: center;
+            padding: 20px;
+            color: var(--text-light);
+            font-size: 0.85rem;
+            margin-top: 40px;
+            border-top: 1px solid var(--border-color);
+        }
+
+        @media (max-width: 768px) {
+            header h1 {
+                font-size: 1.8rem;
+            }
+            h2 {
+                font-size: 1.3rem;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <header>
+            <h1>대한민국 맞춤형 여행 가이드</h1>
+            <p>서울 출발 기준 추천 여행지 (거리, 교통편, 예상 숙박비 안내)</p>
+        </header>
+
+        <!-- 1. 지난 10년간 스테디셀러 인기 여행지 -->
+        <section>
+            <h2>⭐ 지난 10년간 스테디셀러 인기 여행지 TOP 5</h2>
+            <div class="grid">
+                <!-- 제주도 -->
+                <div class="card" style="border-top-color: #3182ce;">
+                    <h3>제주도 <span class="badge">섬/종합</span></h3>
+                    <p>변함없이 사랑받는 대한민국 최고의 휴양지로, 천혜의 자연과 다채로운 인프라를 자랑합니다.</p>
+                    <ul class="info-list">
+                        <li><span class="label">거리</span><span class="value">서울 기준 항공편 이동 (약 1시간)</span></li>
+                        <li><span class="label">교통편</span><span class="value">비행기 (김포공항 출발) + 렌터카</span></li>
+                        <li><span class="label">숙박비</span><span class="value">1박 8만 원 ~ 25만 원 이상 (급별 상이)</span></li>
+                    </ul>
+                </div>
+                <!-- 부산 -->
+                <div class="card" style="border-top-color: #3182ce;">
+                    <h3>부산 <span class="badge">해변/도시</span></h3>
+                    <p>바다와 대도시의 매력이 공존하며, 해운대·광안리 등 사계절 내내 활기찬 관광 도시입니다.</p>
+                    <ul class="info-list">
+                        <li><span class="label">거리</span><span class="value">약 320km (편도 2시간 30분 소요)</span></li>
+                        <li><span class="label">교통편</span><span class="value">KTX (서울역/수서역 ➔ 부산역)</span></li>
+                        <li><span class="label">숙박비</span><span class="value">1박 7만 원 ~ 20만 원</span></li>
+                    </ul>
+                </div>
+                <!-- 강릉/속초 -->
+                <div class="card" style="border-top-color: #3182ce;">
+                    <h3>강릉 / 속초 <span class="badge">바다/먹거리</span></h3>
+                    <p>탁 트인 동해 바다와 커피 거리, 속초 중앙시장 등 미식과 풍경을 동시에 즐기는 곳입니다.</p>
+                    <ul class="info-list">
+                        <li><span class="label">거리</span><span class="value">약 170~190km (편도 1시간 30분~2시간)</span></li>
+                        <li><span class="label">교통편</span><span class="value">KTX (청량리/서울역 ➔ 강릉역) 또는 고속버스</span></li>
+                        <li><span class="label">숙박비</span><span class="value">1박 6만 원 ~ 18만 원</span></li>
+                    </ul>
+                </div>
+                <!-- 여수 -->
+                <div class="card" style="border-top-color: #3182ce;">
+                    <h3>여수 <span class="badge">야경/바다</span></h3>
+                    <p>'여수 밤바다'로 대표되는 낭만적인 항구 도시로 해상 케이블카와 맛있는 남도 음식이 유명합니다.</p>
+                    <ul class="info-list">
+                        <li><span class="label">거리</span><span class="value">약 330km (편도 3시간 소요)</span></li>
+                        <li><span class="label">교통편</span><span class="value">KTX (용산역 ➔ 여수엑스포역)</span></li>
+                        <li><span class="label">숙박비</span><span class="value">1박 7만 원 ~ 20만 원</span></li>
+                    </ul>
+                </div>
+                <!-- 전주 -->
+                <div class="card" style="border-top-color: #3182ce;">
+                    <h3>전주 <span class="badge">문화/미식</span></h3>
+                    <p>전주한옥마을을 중심으로 고즈넉한 전통 한옥 스테이와 길거리 음식 문화를 즐기는 전통 명소입니다.</p>
+                    <ul class="info-list">
+                        <li><span class="label">거리</span><span class="value">약 200km (편도 1시간 40분 소요)</span></li>
+                        <li><span class="label">교통편</span><span class="value">KTX (용산/서울역 ➔ 전주역) 또는 고속버스</span></li>
+                        <li><span class="label">숙박비</span><span class="value">1박 6만 원 ~ 15만 원 (한옥 체험 기준)</span></li>
+                    </ul>
+                </div>
+            </div>
+        </section>
+
+        <!-- 2. 최근 핫한 트렌디 여행지 -->
+        <section>
+            <h2>🔥 최근 가장 핫한 트렌디 여행지 TOP 5</h2>
+            <div class="grid">
+                <!-- 경주 -->
+                <div class="card" style="border-top-color: #dd6b20;">
+                    <h3>경주 (황리단길) <span class="badge">MZ/역사</span></h3>
+                    <p>황리단길의 세련된 카페와 힙한 맛집들이 전통 유적지와 조화를 이루어 전 연령층에게 인기입니다.</p>
+                    <ul class="info-list">
+                        <li><span class="label">거리</span><span class="value">약 270km (편도 2시간 소요)</span></li>
+                        <li><span class="label">교통편</span><span class="value">KTX (서울역 ➔ 신경주역)</span></li>
+                        <li><span class="label">숙박비</span><span class="value">1박 8만 원 ~ 20만 원 (황리단길 숙소/펜션)</span></li>
+                    </ul>
+                </div>
+                <!-- 남해 -->
+                <div class="card" style="border-top-color: #dd6b20;">
+                    <h3>남해안 (남해/통영) <span class="badge">자연/이국적</span></h3>
+                    <p>독일마을, 남해 보리암 등 감성 넘치는 풍경과 이국적인 오션뷰 펜션들이 대거 자리 잡은 힐링 여행지입니다.</p>
+                    <ul class="info-list">
+                        <li><span class="label">거리</span><span class="value">약 350~380km (편도 4시간 이상 소요)</span></li>
+                        <li><span class="label">교통편</span><span class="value">KTX + 렌터카 또는 자차 추천</span></li>
+                        <li><span class="label">숙박비</span><span class="value">1박 10만 원 ~ 25만 원 (오션뷰 펜션)</span></li>
+                    </ul>
+                </div>
+                <!-- 양양 -->
+                <div class="card" style="border-top-color: #dd6b20;">
+                    <h3>양양 <span class="badge">서핑/클럽</span></h3>
+                    <p>‘양리단길’이라 불리며 서핑 문화와 감각적인 펍, 바이브를 즐기는 젊은 층의 성지로 급부상했습니다.</p>
+                    <ul class="info-list">
+                        <li><span class="label">거리</span><span class="value">약 160km (편도 1시간 40분 소요)</span></li>
+                        <li><span class="label">교통편</span><span class="value">서울양양고속도로 직행 버스 또는 자차</span></li>
+                        <li><span class="label">숙박비</span><span class="value">1박 7만 원 ~ 22만 원 (리조트/게스트하우스)</span></li>
+                    </ul>
+                </div>
+                <!-- 단양 -->
+                <div class="card" style="border-top-color: #dd6b20;">
+                    <h3>단양 <span class="badge">액티비티/자연</span></h3>
+                    <p>패러글라이딩의 메카이자 만천하스카이워크, 구경시장 등 액티비티와 미식을 함께 즐기는 곳입니다.</p>
+                    <ul class="info-list">
+                        <li><span class="label">거리</span><span class="value">약 150km (편도 2시간 소요)</span></li>
+                        <li><span class="label">교통편</span><span class="value">KTX-이음 (청량리역 ➔ 단양역)</span></li>
+                        <li><span class="label">숙박비</span><span class="value">1박 5만 원 ~ 15만 원</span></li>
+                    </ul>
+                </div>
+                <!-- 춘천 -->
+                <div class="card" style="border-top-color: #dd6b20;">
+                    <h3>춘천 <span class="badge">근교/호수</span></h3>
+                    <p>레고랜드 개장과 소양강스카이워크, 남이섬 등 호수를 품은 감성 카페 투어로 사계절 인기가 높습니다.</p>
+                    <ul class="info-list">
+                        <li><span class="label">거리</span><span class="value">약 85km (편도 1시간 소요)</span></li>
+                        <li><span class="label">교통편</span><span class="value">ITX-청춘 (용산/청량리역 ➔ 춘천역)</span></li>
+                        <li><span class="label">숙박비</span><span class="value">1박 6만 원 ~ 16만 원</span></li>
+                    </ul>
+                </div>
+            </div>
+        </section>
+
+        <!-- 3. 한적한 힐링 여행지 -->
+        <section>
+            <h2>🍃 조용하고 한적한 힐링 여행지 TOP 5</h2>
+            <div class="grid">
+                <!-- 태안 -->
+                <div class="card" style="border-top-color: #38a169;">
+                    <h3>태안 <span class="badge">바다/솔숲</span></h3>
+                    <p>끝없이 펼쳐진 서해안의 조용한 해수욕장과 피톤치드 가득한 안면도 자연휴양림이 있는 곳입니다.</p>
+                    <ul class="info-list">
+                        <li><span class="label">거리</span><span class="value">약 150km (편도 2시간 소요)</span></li>
+                        <li><span class="label">교통편</span><span class="value">고속버스 (서울고속버스터미널 ➔ 태안)</span></li>
+                        <li><span class="label">숙박비</span><span class="value">1박 5만 원 ~ 14만 원 (펜션 중심)</span></li>
+                    </ul>
+                </div>
+                <!-- 영월 -->
+                <div class="card" style="border-top-color: #38a169;">
+                    <h3>영월 <span class="badge">계곡/별마로</span></h3>
+                    <p>깊은 산세와 맑은 계곡, 그리고 별마로 천문대에서 밤하늘의 별을 감상할 수 있는 고요한 산골 도시입니다.</p>
+                    <ul class="info-list">
+                        <li><span class="label">거리</span><span class="value">약 160km (편도 2시간 10분 소요)</span></li>
+                        <li><span class="label">교통편</span><span class="value">청량리역 출발 무궁화호 또는 KTX-이음</span></li>
+                        <li><span class="label">숙박비</span><span class="value">1박 5만 원 ~ 13만 원</span></li>
+                    </ul>
+                </div>
+                <!-- 고성 (강원) -->
+                <div class="card" style="border-top-color: #38a169;">
+                    <h3>고성 (강원) <span class="badge">동해/프라이빗</span></h3>
+                    <p>동해안 최북단 지역으로 속초보다 훨씬 한적하고 깨끗한 백사장과 오션뷰 프라이빗 감성 숙소가 많습니다.</p>
+                    <ul class="info-list">
+                        <li><span class="label">거리</span><span class="value">약 200km (편도 2시간 소요)</span></li>
+                        <li><span class="label">교통편</span><span class="value">KTX (강릉/진부역) + 버스 또는 자차</span></li>
+                        <li><span class="label">숙박비</span><span class="value">1박 7만 원 ~ 18만 원</span></li>
+                    </ul>
+                </div>
+                <!-- 무주 -->
+                <div class="card" style="border-top-color: #38a169;">
+                    ### 무주 <span class="badge">산악/계곡</span></h3>
+                    <p>덕유산 국립공원의 웅장한 자연과 구천동 계곡의 맑은 물줄기 속에서 온전한 휴식을 취할 수 있습니다.</p>
+                    <ul class="info-list">
+                        <li><span class="label">거리</span><span class="value">약 220km (편도 2시간 30분 소요)</span></li>
+                        <li><span class="label">교통편</span><span class="value">고속버스 (대전 또는 서울남부터미널 경유)</span></li>
+                        <li><span class="label">숙박비</span><span class="value">1박 5만 원 ~ 15만 원 (리조트/팬션)</span></li>
+                    </ul>
+                </div>
+                <!-- 남원 -->
+                <div class="card" style="border-top-color: #38a169;">
+                    <h3>남원 <span class="badge">지리산/고즈넉</span></h3>
+                    <p>지리산 자락 아래 포근하게 안긴 도시로, 광한루원과 춘향테마파크 등 느긋한 발걸음 여행에 제격입니다.</p>
+                    <ul class="info-list">
+                        <li><span class="label">거리</span><span class="value">약 260km (편도 2시간 20분 소요)</span></li>
+                        <li><span class="label">교통편</span><span class="value">KTX (용산역 ➔ 남원역)</span></li>
+                        <li><span class="label">숙박비</span><span class="value">1박 5만 원 ~ 12만 원</span></li>
+                    </ul>
+                </div>
+            </div>
+        </section>
+
+        <!-- 4. 테마별 추천 요약 -->
+        <section>
+            <h2>🎨 테마별 추천 요약 (서울 기준)</h2>
+            <div class="grid">
+                <!-- 바다 테마 -->
+                <div class="card" style="border-top-color: #805ad5;">
+                    <h3>🌊 바다 테마</h3>
+                    <p>시원한 파도와 오션뷰를 만끽하고 싶을 때 추천하는 해양 도시들입니다.</p>
+                    <ul class="info-list">
+                        <li><span class="label">추천지</span><span class="value">강원 고성 / 부산 / 여수</span></li>
+                        <li><span class="label">교통</span><span class="value">고속철도(KTX) 및 고속도로 잘 정비됨</span></li>
+                        <li><span class="label">숙박비</span><span class="value">평균 7만 원 ~ 20만 원</span></li>
+                    </ul>
+                </div>
+                <!-- 산/계곡 테마 -->
+                <div class="card" style="border-top-color: #805ad5;">
+                    <h3>⛰️ 산 & 계곡 테마</h3>
+                    <p>초록빛 숲과 시원한 계곡물, 맑은 공기로 심신을 정화하는 힐링 코스입니다.</p>
+                    <ul class="info-list">
+                        <li><span class="label">추천지</span><span class="value">강원 영월 / 무주 덕유산</span></li>
+                        <li><span class="label">교통</span><span class="value">KTX-이음 또는 자차 이동 편리</span></li>
+                        <li><span class="label">숙박비</span><span class="value">평균 5만 원 ~ 15만 원</span></li>
+                    </ul>
+                </div>
+                <!-- 맛집/미식 테마 -->
+                <div class="card" style="border-top-color: #805ad5;">
+                    <h3>🍲 미식 & 문화 테마</h3>
+                    <p>여행의 즐거움 중 큰 비중을 차지하는 로컬 맛집과 전통을 탐방하는 코스입니다.</p>
+                    <ul class="info-list">
+                        <li><span class="label">추천지</span><span class="value">전주 / 속초 / 부산</span></li>
+                        <li><span class="label">교통</span><span class="value">KTX로 접근성이 매우 뛰어남</span></li>
+                        <li><span class="label">숙박비</span><span class="value">평균 6만 원 ~ 18만 원</span></li>
+                    </ul>
+                </div>
+            </div>
+        </section>
+
+        <footer>
+            <p>※ 상기 숙박비는 비수기/성수기 및 주말 여부에 따라 변동될 수 있습니다.</p>
+        </footer>
+    </div>
+
+</body>
+</html>
