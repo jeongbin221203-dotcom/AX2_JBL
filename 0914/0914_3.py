@@ -12,26 +12,50 @@ from streamlit_js_eval import get_geolocation
 # 1. 페이지 설정
 st.set_page_config(page_title="서울 여행 가이드 & 스마트 루트 플래너", layout="wide")
 
-# 2. .env 로드
+# 2. 환경변수 및 Secrets 로드 (로컬 .env & 클라우드 Secrets 완벽 호환)
 ROOT_DIR = Path(__file__).resolve().parent.parent
 ENV_FILE = ROOT_DIR / ".env"
 
-if not ENV_FILE.exists():
-    st.error(f"❌ `.env` 파일을 찾을 수 없습니다: {ENV_FILE}")
+# 로컬에 .env가 있을 때만 로드 (없어도 에러 내거나 멈추지 않음)
+if ENV_FILE.exists():
+    load_dotenv(dotenv_path=ENV_FILE, override=True)
+
+
+def get_secret(key_name: str, fallback_key: str = None):
+    """Streamlit Secrets 우선 조회 후, 로컬 파일 부재 시 os.getenv로 안전하게 조회"""
+    try:
+        if key_name in st.secrets:
+            return st.secrets[key_name]
+        if fallback_key and fallback_key in st.secrets:
+            return st.secrets[fallback_key]
+    except Exception:
+        pass
+
+    val = os.getenv(key_name)
+    if not val and fallback_key:
+        val = os.getenv(fallback_key)
+    return val
+
+
+KAKAO_KEY = get_secret("KAKAO_REST_API_KEY")
+WEATHER_KEY = get_secret("OPENWEATHER_API_KEY")
+EXCHANGE_KEY = get_secret("EXCHANGE_API_KEY", "EXCHANGE_RATE_API_KEY")
+
+# 로컬과 클라우드 모두에서 키를 찾지 못한 경우에만 에러 출력
+if not KAKAO_KEY:
+    st.error(
+        "⚠️ API 키가 설정되지 않았습니다.\n\n"
+        "- **로컬 실행:** `.env` 파일에 키를 작성하세요.\n"
+        "- **Streamlit Cloud:** 앱의 `Settings` ➡️ `Secrets`에 키를 등록하세요."
+    )
     st.stop()
 
-load_dotenv(dotenv_path=ENV_FILE, override=True)
-
-KAKAO_KEY = os.getenv("KAKAO_REST_API_KEY")
-WEATHER_KEY = os.getenv("OPENWEATHER_API_KEY")
-EXCHANGE_KEY = os.getenv("EXCHANGE_API_KEY") or os.getenv("EXCHANGE_RATE_API_KEY")
-
 st.title("🧭 서울 여행 가이드 & 스마트 루트 플래너")
-st.caption("실시간 날씨와 글로벌 8개국 환율, 좌우 이동식 테마 필터, 해외 관광객용 환율 계산기 및 경로/경비 분석을 지원합니다.")
+st.caption("실시간 날씨와 글로벌 환율, 테마별 60대 명소·맛집, 자차/대중교통 상세 경비 비교 및 실제 경로를 지원합니다.")
 st.divider()
 
 
-# 3. 유틸리티 및 연산 함수
+# 3. 유틸리티 및 계산 함수
 def calculate_distance(lat1, lon1, lat2, lon2):
     r = 6371.0
     d_lat = math.radians(lat2 - lat1)
@@ -60,9 +84,11 @@ def calculate_transit_fare(distance_km):
     return base_fare + (extra_units * 100)
 
 
-# 4. 외부 API 함수
+# 4. 외부 API 연동 함수
 @st.cache_data(ttl=3600)
 def get_exchange_rates(base_currency: str = "USD"):
+    if not EXCHANGE_KEY:
+        return {}
     url = f"https://v6.exchangerate-api.com/v6/{EXCHANGE_KEY}/latest/{base_currency}"
     try:
         res = requests.get(url, timeout=5)
@@ -77,6 +103,8 @@ def get_exchange_rates(base_currency: str = "USD"):
 
 @st.cache_data(ttl=1800)
 def get_current_weather(city_name: str = "Seoul"):
+    if not WEATHER_KEY:
+        return None
     url = "https://api.openweathermap.org/data/2.5/weather"
     params = {"q": city_name, "appid": WEATHER_KEY, "units": "metric", "lang": "kr"}
     try:
@@ -90,6 +118,8 @@ def get_current_weather(city_name: str = "Seoul"):
 
 @st.cache_data(ttl=1800)
 def get_weather_forecast(city_name: str = "Seoul"):
+    if not WEATHER_KEY:
+        return []
     url = "https://api.openweathermap.org/data/2.5/forecast"
     params = {"q": city_name, "appid": WEATHER_KEY, "units": "metric", "lang": "kr"}
     try:
@@ -188,7 +218,7 @@ def search_nearby_attractions(center_lat, center_lon, radius=2500):
     return []
 
 
-# 5. 상단 정보 브리핑 (글로벌 6개국 환율 표시)
+# 5. 상단 정보 브리핑 (환율 및 날씨)
 col_top_info1, col_top_info2 = st.columns([1.2, 1], gap="medium")
 
 with col_top_info1:
@@ -226,12 +256,12 @@ if forecast:
 
 st.divider()
 
-# 6. 테마별 10곳씩 총 60곳 데이터셋
-DATASET_VERSION = "v2.3_60_places"
+# 6. 테마별 10곳씩 총 60곳 엄선 데이터셋
+DATASET_VERSION = "v2.4_60_places"
 
 theme_places_60 = [
     # --- [1] 궁궐/역사 (10곳) ---
-    {"name": "경복궁", "category": "궁궐/역사", "address": "서울특별시 종로구 사직로 161", "lat": 37.5759, "lon": 126.9768, "admission": 3000, "desc": "조선 제일의 법궁 (한복 착용 시 무료)"},
+    {"name": "경복궁", "category": "궁궐/역사", "address": "서울특별시 종로구 사직로 161", "lat": 37.5759, "lon": 126.9768, "admission": 3000, "desc": "조선 제일의 법궁 (한복 착용 무료)"},
     {"name": "창덕궁 및 후원", "category": "궁궐/역사", "address": "서울특별시 종로구 율곡로 99", "lat": 37.5796, "lon": 126.9910, "admission": 3000, "desc": "유네스코 세계문화유산"},
     {"name": "창경궁", "category": "궁궐/역사", "address": "서울특별시 종로구 창경궁로 185", "lat": 37.5788, "lon": 126.9948, "admission": 1000, "desc": "대온실과 야간 상시 개장"},
     {"name": "덕수궁", "category": "궁궐/역사", "address": "서울특별시 중구 세종대로 99", "lat": 37.5658, "lon": 126.9752, "admission": 1000, "desc": "석조전과 도심 속 돌담길"},
@@ -303,6 +333,7 @@ theme_places_60 = [
     {"name": "하동관 명동본점", "category": "맛집/미식", "address": "서울특별시 중구 명동9길 12", "lat": 37.5644, "lon": 126.9847, "admission": 0, "desc": "80년 전통 놋그릇에 담아내는 한우 곰탕"},
 ]
 
+# 세션 캐시 충돌 방지를 위한 버전 검사 및 갱신
 if "dataset_ver" not in st.session_state or st.session_state.dataset_ver != DATASET_VERSION:
     st.session_state.places = theme_places_60
     st.session_state.dataset_ver = DATASET_VERSION
@@ -312,7 +343,7 @@ else:
         if dp["name"] not in existing_names:
             st.session_state.places.append(dp)
 
-# 7. 상단 컨트롤 패널
+# 7. 상단 컨트롤 패널 (출발 위치 & 장소 검색)
 c_loc, c_add = st.columns([1, 1], gap="medium")
 
 with c_loc:
@@ -328,7 +359,7 @@ with c_loc:
             base_loc_label = "내 현재 위치"
             st.success(f"📡 위치 감지: `{cur_lat:.4f}, {cur_lon:.4f}`")
         else:
-            st.info("💡 브라우저 위치 권한을 허용하면 현재 위치가 반영됩니다.")
+            st.info("💡 브라우저 상단에서 위치 권한을 허용해 주세요.")
     else:
         st_select = st.selectbox("출발 기준점", ["서울역", "강남역", "홍대입구역", "잠실역"])
         dict_pos = {
@@ -360,14 +391,14 @@ with c_add:
         else:
             st.error("장소를 찾지 못했습니다.")
 
-# 거리 연산
+# 기준점 기준 직선거리 계산 및 정렬
 for p in st.session_state.places:
     p["dist"] = calculate_distance(cur_lat, cur_lon, p["lat"], p["lon"])
 sorted_places = sorted(st.session_state.places, key=lambda x: x["dist"])
 
 st.divider()
 
-# 8. 메인 레이아웃: 좌측(목적지 선택) vs 우측(여정 브리핑 & 지도 & 지도 하단 환율 계산기)
+# 8. 메인 레이아웃: 좌측(목적지 선택) vs 우측(여정 브리핑 & 지도 & 환율 계산기)
 col_nav, col_main = st.columns([1.1, 1.9], gap="large")
 
 with col_nav:
@@ -386,7 +417,7 @@ with col_nav:
     with b_label:
         st.markdown(
             f"<div style='text-align:center; font-weight:bold; padding-top:6px; color:#2563EB; font-size:16px;'>{categories[st.session_state.cat_idx]}</div>",
-            unsafe_allow_html=True
+            unsafe_allow_html=True,
         )
     with b_next:
         if st.button("▶", use_container_width=True):
@@ -462,6 +493,7 @@ with col_main:
 
     travel_map = folium.Map(location=[mid_lat, mid_lon], zoom_start=12, tiles="OpenStreetMap")
 
+    # 출발지 마커
     folium.Marker(
         location=[cur_lat, cur_lon],
         tooltip=f"출발: {base_loc_label}",
@@ -469,6 +501,7 @@ with col_main:
         icon=folium.Icon(color="green", icon="user", prefix="fa"),
     ).add_to(travel_map)
 
+    # 목적지 마커
     is_restaurant = target_place.get("category") == "맛집/미식"
     m_color = "orange" if is_restaurant else "purple"
     m_icon = "cutlery" if is_restaurant else "flag"
@@ -480,6 +513,7 @@ with col_main:
         icon=folium.Icon(color=m_color, icon=m_icon, prefix="fa"),
     ).add_to(travel_map)
 
+    # 실제 도로 경로 PolyLine
     if route_info and route_info["path"]:
         folium.PolyLine(
             locations=route_info["path"],
@@ -518,15 +552,15 @@ with col_main:
             icon=folium.Icon(color="cadetblue", icon="star"),
         ).add_to(travel_map)
 
+    # 지도시각화
     st_folium(travel_map, width="100%", height=560, returned_objects=[])
 
-    # [지도 하단] 글로벌 8개국 환율 계산기
+    # 지도 하단 환율 계산기
     with st.expander("💱 해외 관광객용 원화(KRW) 환율 계산기 (8개국 통화 지원)", expanded=False):
         rates = get_exchange_rates("USD")
         if rates:
             krw_val = rates.get("KRW", 1340)
 
-            # KRW 1원당 각 통화의 가치 계산
             currency_converters = {
                 "USD": rates.get("USD", 1.0) / krw_val,
                 "JPY": rates.get("JPY", 150.0) / krw_val,
@@ -541,14 +575,12 @@ with col_main:
             default_calc = int(fuel_cost + toll_fare + admission_fee) if (fuel_cost + toll_fare + admission_fee) > 0 else 30000
             calc_krw = st.number_input("사용 금액 입력 (KRW 원)", min_value=0, value=default_calc, step=5000)
 
-            # 1행 (주요 4개 통화)
             c1, c2, c3, c4 = st.columns(4)
             c1.metric("🇺🇸 미국 (USD)", f"${calc_krw * currency_converters['USD']:,.2f}")
             c2.metric("🇯🇵 일본 (JPY)", f"¥{calc_krw * currency_converters['JPY']:,.0f}")
             c3.metric("🇪🇺 유럽 (EUR)", f"€{calc_krw * currency_converters['EUR']:,.2f}")
             c4.metric("🇨🇳 중국 (CNY)", f"¥{calc_krw * currency_converters['CNY']:,.2f}")
 
-            # 2행 (아시아/영연방 4개 통화)
             c5, c6, c7, c8 = st.columns(4)
             c5.metric("🇹🇼 대만 (TWD)", f"NT${calc_krw * currency_converters['TWD']:,.1f}")
             c6.metric("🇭🇰 홍콩 (HKD)", f"HK${calc_krw * currency_converters['HKD']:,.2f}")
