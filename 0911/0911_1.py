@@ -1,3 +1,6 @@
+# api key 직접입력
+
+
 from openai import OpenAI
 
 # client = OpenAI(api_key="key")
