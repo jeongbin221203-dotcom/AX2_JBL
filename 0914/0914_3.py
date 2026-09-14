@@ -12,11 +12,10 @@ from streamlit_js_eval import get_geolocation
 # 1. 페이지 설정
 st.set_page_config(page_title="서울 여행 가이드 & 스마트 루트 플래너", layout="wide")
 
-# 2. 환경변수 및 Secrets 로드 (로컬 .env & 클라우드 Secrets 완벽 호환)
+# 2. 환경변수 및 Secrets 로드 (로컬 .env & Streamlit Cloud 완벽 호환)
 ROOT_DIR = Path(__file__).resolve().parent.parent
 ENV_FILE = ROOT_DIR / ".env"
 
-# 로컬에 .env가 있을 때만 로드 (없어도 에러 내거나 멈추지 않음)
 if ENV_FILE.exists():
     load_dotenv(dotenv_path=ENV_FILE, override=True)
 
@@ -41,17 +40,16 @@ KAKAO_KEY = get_secret("KAKAO_REST_API_KEY")
 WEATHER_KEY = get_secret("OPENWEATHER_API_KEY")
 EXCHANGE_KEY = get_secret("EXCHANGE_API_KEY", "EXCHANGE_RATE_API_KEY")
 
-# 로컬과 클라우드 모두에서 키를 찾지 못한 경우에만 에러 출력
 if not KAKAO_KEY:
     st.error(
         "⚠️ API 키가 설정되지 않았습니다.\n\n"
-        "- **로컬 실행:** `.env` 파일에 키를 작성하세요.\n"
+        "- **로컬 실행:** 루트 폴더의 `.env` 파일에 키를 작성하세요.\n"
         "- **Streamlit Cloud:** 앱의 `Settings` ➡️ `Secrets`에 키를 등록하세요."
     )
     st.stop()
 
 st.title("🧭 서울 여행 가이드 & 스마트 루트 플래너")
-st.caption("실시간 날씨와 글로벌 환율, 테마별 60대 명소·맛집, 자차/대중교통 상세 경비 비교 및 실제 경로를 지원합니다.")
+st.caption("실시간 날씨와 8개국 환율, 직관적인 칩 필터, 상세 이동 경로 및 예산 분석을 지원합니다.")
 st.divider()
 
 
@@ -218,7 +216,7 @@ def search_nearby_attractions(center_lat, center_lon, radius=2500):
     return []
 
 
-# 5. 상단 정보 브리핑 (환율 및 날씨)
+# 5. 상단 정보 브리핑
 col_top_info1, col_top_info2 = st.columns([1.2, 1], gap="medium")
 
 with col_top_info1:
@@ -257,7 +255,7 @@ if forecast:
 st.divider()
 
 # 6. 테마별 10곳씩 총 60곳 엄선 데이터셋
-DATASET_VERSION = "v2.4_60_places"
+DATASET_VERSION = "v3.0_60_places"
 
 theme_places_60 = [
     # --- [1] 궁궐/역사 (10곳) ---
@@ -333,7 +331,7 @@ theme_places_60 = [
     {"name": "하동관 명동본점", "category": "맛집/미식", "address": "서울특별시 중구 명동9길 12", "lat": 37.5644, "lon": 126.9847, "admission": 0, "desc": "80년 전통 놋그릇에 담아내는 한우 곰탕"},
 ]
 
-# 세션 캐시 충돌 방지를 위한 버전 검사 및 갱신
+# 세션 캐시 충돌 방지 및 최신 버전 동기화
 if "dataset_ver" not in st.session_state or st.session_state.dataset_ver != DATASET_VERSION:
     st.session_state.places = theme_places_60
     st.session_state.dataset_ver = DATASET_VERSION
@@ -402,29 +400,27 @@ st.divider()
 col_nav, col_main = st.columns([1.1, 1.9], gap="large")
 
 with col_nav:
-    st.subheader("🎯 목적지 선택")
+    st.subheader("🎯 목적지 탐색 & 선택")
 
-    categories = ["전체", "궁궐/역사", "전망/랜드마크", "문화/전시", "골목/쇼핑", "자연/공원", "맛집/미식"]
-    if "cat_idx" not in st.session_state:
-        st.session_state.cat_idx = 0
+    # 1) 최신 스타일의 이모지 칩(Pills) 필터
+    categories = [
+        "전체",
+        "궁궐/역사 🏯",
+        "전망/랜드마크 🗼",
+        "문화/전시 🎨",
+        "골목/쇼핑 🛍️",
+        "자연/공원 🌳",
+        "맛집/미식 🍜",
+    ]
 
-    st.markdown("##### 🏷️ 테마 필터")
-    b_prev, b_label, b_next = st.columns([1, 4, 1])
-    with b_prev:
-        if st.button("◀", use_container_width=True):
-            st.session_state.cat_idx = (st.session_state.cat_idx - 1) % len(categories)
-            st.rerun()
-    with b_label:
-        st.markdown(
-            f"<div style='text-align:center; font-weight:bold; padding-top:6px; color:#2563EB; font-size:16px;'>{categories[st.session_state.cat_idx]}</div>",
-            unsafe_allow_html=True,
-        )
-    with b_next:
-        if st.button("▶", use_container_width=True):
-            st.session_state.cat_idx = (st.session_state.cat_idx + 1) % len(categories)
-            st.rerun()
+    selected_theme_label = st.pills(
+        "테마 선택",
+        options=categories,
+        default="전체",
+        label_visibility="collapsed",
+    )
 
-    selected_cat = categories[st.session_state.cat_idx]
+    selected_cat = selected_theme_label.split()[0] if selected_theme_label else "전체"
 
     filtered_places = (
         sorted_places
@@ -432,21 +428,41 @@ with col_nav:
         else [p for p in sorted_places if p.get("category") == selected_cat]
     )
 
-    place_options = [p["name"] for p in filtered_places]
-    if not place_options:
+    st.markdown(
+        f"<div style='margin-bottom:8px; font-size:13px; color:#64748B;'>총 <b>{len(filtered_places)}곳</b>의 명소가 있습니다.</div>",
+        unsafe_allow_html=True,
+    )
+
+    # 2) 긴 라디오 대신 거리 정보가 포함된 드롭다운 셀렉트박스
+    place_dict = {
+        f"{p['name']} ({p['dist']:.1f}km)": p["name"]
+        for p in filtered_places
+    }
+
+    if not place_dict:
         st.info("해당 테마의 장소가 없습니다.")
         target_name = sorted_places[0]["name"]
     else:
-        target_name = st.radio(
-            "방문할 장소를 선택하세요",
-            place_options,
+        selected_display = st.selectbox(
+            "목적지 선택",
+            options=list(place_dict.keys()),
             index=0,
             label_visibility="collapsed",
         )
+        target_name = place_dict[selected_display]
 
+    # 3) 선택된 장소 상세 프리뷰 카드
     target_place = next(p for p in sorted_places if p["name"] == target_name)
     with st.container(border=True):
-        st.markdown(f"### **{target_place['name']}**")
+        t_col1, t_col2 = st.columns([3, 1])
+        with t_col1:
+            st.markdown(f"#### **{target_place['name']}**")
+        with t_col2:
+            st.markdown(
+                f"<div style='text-align:right;'><span style='background:#EFF6FF; color:#1D4ED8; padding:3px 8px; border-radius:8px; font-size:12px; font-weight:600;'>{target_place.get('category', '명소')}</span></div>",
+                unsafe_allow_html=True,
+            )
+
         st.caption(f"📍 {target_place.get('address', '')}")
 
         desc_text = target_place.get("desc") or target_place.get("admission_desc") or "서울 주요 명소"
@@ -455,9 +471,11 @@ with col_nav:
         admission_val = target_place.get("admission", 0)
         cost_label = "입장료" if target_place.get("category") != "맛집/미식" else "입장료(식비별도)"
         admission_str = f"성인 {admission_val:,}원" if admission_val > 0 else "무료"
-        st.markdown(
-            f"**거리:** `{target_place.get('dist', 0):.2f} km`  |  **{cost_label}:** `{admission_str}`"
-        )
+
+        st.markdown("---")
+        m_col1, m_col2 = st.columns(2)
+        m_col1.markdown(f"📏 **출발지 기준:** `{target_place.get('dist', 0):.2f} km`")
+        m_col2.markdown(f"🎟️ **{cost_label}:** `{admission_str}`")
 
 with col_main:
     route_info = get_kakao_car_directions(cur_lat, cur_lon, target_place["lat"], target_place["lon"])
@@ -471,6 +489,7 @@ with col_main:
     transit_time = max(round(linear_dist / 18 * 60) + 7, 10)
     admission_fee = target_place.get("admission", 0)
 
+    # 상단 요약 카드
     with st.container(border=True):
         st.markdown(f"#### 🚗 여정 브리핑: `{base_loc_label}` ➡️ `{target_place['name']}`")
 
@@ -513,7 +532,7 @@ with col_main:
         icon=folium.Icon(color=m_color, icon=m_icon, prefix="fa"),
     ).add_to(travel_map)
 
-    # 실제 도로 경로 PolyLine
+    # 실제 주행 경로 PolyLine
     if route_info and route_info["path"]:
         folium.PolyLine(
             locations=route_info["path"],
@@ -552,10 +571,10 @@ with col_main:
             icon=folium.Icon(color="cadetblue", icon="star"),
         ).add_to(travel_map)
 
-    # 지도시각화
+    # 지도 렌더링
     st_folium(travel_map, width="100%", height=560, returned_objects=[])
 
-    # 지도 하단 환율 계산기
+    # 지도 하단 8개국 환율 계산기
     with st.expander("💱 해외 관광객용 원화(KRW) 환율 계산기 (8개국 통화 지원)", expanded=False):
         rates = get_exchange_rates("USD")
         if rates:
@@ -589,6 +608,7 @@ with col_main:
         else:
             st.info("환율 정보를 불러올 수 없습니다.")
 
+    # 경유지 추천
     if waypoint_attractions:
         with st.expander("📍 경로 중간에 들르기 좋은 추천 스팟", expanded=False):
             w_cols = st.columns(len(waypoint_attractions))
