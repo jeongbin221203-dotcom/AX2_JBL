@@ -12,45 +12,47 @@ from streamlit_js_eval import get_geolocation
 # 1. 페이지 설정
 st.set_page_config(page_title="서울 여행 가이드 & 스마트 루트 플래너", layout="wide")
 
-# 가로 스크롤 칩 필터용 커스텀 CSS 주입
+# 사이드바 전용 가로 스크롤 막대바 스타일링 CSS
 st.markdown(
     """
     <style>
-    /* st.pills 컨테이너를 가로 스크롤 가능하게 설정 */
-    div[data-testid="stPills"] > div {
-        display: flex !important;
-        flex-wrap: nowrap !important;
-        overflow-x: auto !important;
-        gap: 8px !important;
-        padding-bottom: 8px !important;
+    /* 사이드바 내부 칩 필터 컨테이너: 가로 스크롤 트랙 */
+    section[data-testid="stSidebar"] .scroll-pill-container {
+        width: 100%;
+        overflow-x: auto;
+        overflow-y: hidden;
+        white-space: nowrap;
+        padding-bottom: 8px;
         -webkit-overflow-scrolling: touch;
     }
-    /* 가로 스크롤 칩 항목이 줄바꿈되지 않고 형태 유지 */
-    div[data-testid="stPills"] button {
-        white-space: nowrap !important;
-        flex-shrink: 0 !important;
+
+    /* 슬림 라운드 파란색 스크롤 막대 */
+    section[data-testid="stSidebar"] .scroll-pill-container::-webkit-scrollbar {
+        height: 5px !important;
+        display: block !important;
     }
-    /* 얇고 세련된 스크롤바 디자인 */
-    div[data-testid="stPills"] > div::-webkit-scrollbar {
-        height: 6px;
+    section[data-testid="stSidebar"] .scroll-pill-container::-webkit-scrollbar-track {
+        background: #F1F5F9 !important;
+        border-radius: 10px !important;
     }
-    div[data-testid="stPills"] > div::-webkit-scrollbar-track {
-        background: #F1F5F9;
-        border-radius: 4px;
+    section[data-testid="stSidebar"] .scroll-pill-container::-webkit-scrollbar-thumb {
+        background: #1D8CF8 !important;
+        border-radius: 10px !important;
     }
-    div[data-testid="stPills"] > div::-webkit-scrollbar-thumb {
-        background: #CBD5E1;
-        border-radius: 4px;
+    section[data-testid="stSidebar"] .scroll-pill-container::-webkit-scrollbar-thumb:hover {
+        background: #0076E4 !important;
     }
-    div[data-testid="stPills"] > div::-webkit-scrollbar-thumb:hover {
-        background: #94A3B8;
+
+    section[data-testid="stSidebar"] .scroll-pill-container {
+        scrollbar-width: thin;
+        scrollbar-color: #1D8CF8 #F1F5F9;
     }
     </style>
     """,
     unsafe_allow_html=True,
 )
 
-# 2. 환경변수 및 Secrets 로드 (로컬 .env & Streamlit Cloud 완벽 호환)
+# 2. 환경변수 및 Secrets 로드
 ROOT_DIR = Path(__file__).resolve().parent.parent
 ENV_FILE = ROOT_DIR / ".env"
 
@@ -59,7 +61,6 @@ if ENV_FILE.exists():
 
 
 def get_secret(key_name: str, fallback_key: str = None):
-    """Streamlit Secrets 우선 조회 후, 로컬 파일 부재 시 os.getenv로 안전하게 조회"""
     try:
         if key_name in st.secrets:
             return st.secrets[key_name]
@@ -87,7 +88,7 @@ if not KAKAO_KEY:
     st.stop()
 
 st.title("🧭 서울 여행 가이드 & 스마트 루트 플래너")
-st.caption("실시간 날씨와 8개국 환율, 가로 스크롤 칩 필터, 상세 이동 경로 및 예산 분석을 지원합니다.")
+st.caption("실시간 날씨와 8개국 환율, 사이드바 목적지 탐색, 스마트 이동 경로 및 경비 분석을 지원합니다.")
 st.divider()
 
 
@@ -293,7 +294,7 @@ if forecast:
 st.divider()
 
 # 6. 테마별 10곳씩 총 60곳 엄선 데이터셋
-DATASET_VERSION = "v3.1_60_places"
+DATASET_VERSION = "v3.5_sidebar_places"
 
 theme_places_60 = [
     # --- [1] 궁궐/역사 (10곳) ---
@@ -369,7 +370,6 @@ theme_places_60 = [
     {"name": "하동관 명동본점", "category": "맛집/미식", "address": "서울특별시 중구 명동9길 12", "lat": 37.5644, "lon": 126.9847, "admission": 0, "desc": "80년 전통 놋그릇에 담아내는 한우 곰탕"},
 ]
 
-# 세션 캐시 충돌 방지 및 최신 버전 동기화
 if "dataset_ver" not in st.session_state or st.session_state.dataset_ver != DATASET_VERSION:
     st.session_state.places = theme_places_60
     st.session_state.dataset_ver = DATASET_VERSION
@@ -434,13 +434,10 @@ sorted_places = sorted(st.session_state.places, key=lambda x: x["dist"])
 
 st.divider()
 
-# 8. 메인 레이아웃: 좌측(목적지 선택) vs 우측(여정 브리핑 & 지도 & 환율 계산기)
-col_nav, col_main = st.columns([1.1, 1.9], gap="large")
+# 8. 사이드바: 목적지 탐색 & 테마 선택 & 상세 프리뷰 카드
+with st.sidebar:
+    st.header("🎯 목적지 탐색 & 선택")
 
-with col_nav:
-    st.subheader("🎯 목적지 탐색 & 선택")
-
-    # 가로 스크롤 가능한 칩 필터 바
     categories = [
         "전체",
         "궁궐/역사 🏯",
@@ -451,12 +448,15 @@ with col_nav:
         "맛집/미식 🍜",
     ]
 
+    st.markdown("**🏷️ 테마 선택** (좌우로 스크롤 가능)")
+    st.markdown('<div class="scroll-pill-container">', unsafe_allow_html=True)
     selected_theme_label = st.pills(
         "테마 선택",
         options=categories,
         default="전체",
         label_visibility="collapsed",
     )
+    st.markdown("</div>", unsafe_allow_html=True)
 
     selected_cat = selected_theme_label.split()[0] if selected_theme_label else "전체"
 
@@ -466,12 +466,8 @@ with col_nav:
         else [p for p in sorted_places if p.get("category") == selected_cat]
     )
 
-    st.markdown(
-        f"<div style='margin-top:4px; margin-bottom:8px; font-size:13px; color:#64748B;'>총 <b>{len(filtered_places)}곳</b>의 명소가 있습니다. (좌우로 스크롤하여 테마 탐색)</div>",
-        unsafe_allow_html=True,
-    )
+    st.caption(f"총 **{len(filtered_places)}곳**의 장소가 있습니다.")
 
-    # 거리 정보가 포함된 드롭다운 셀렉트박스
     place_dict = {
         f"{p['name']} ({p['dist']:.1f}km)": p["name"]
         for p in filtered_places
@@ -485,11 +481,9 @@ with col_nav:
             "목적지 선택",
             options=list(place_dict.keys()),
             index=0,
-            label_visibility="collapsed",
         )
         target_name = place_dict[selected_display]
 
-    # 선택된 장소 상세 프리뷰 카드
     target_place = next(p for p in sorted_places if p["name"] == target_name)
     with st.container(border=True):
         t_col1, t_col2 = st.columns([3, 1])
@@ -512,147 +506,147 @@ with col_nav:
 
         st.markdown("---")
         m_col1, m_col2 = st.columns(2)
-        m_col1.markdown(f"📏 **출발지 기준:** `{target_place.get('dist', 0):.2f} km`")
+        m_col1.markdown(f"📏 **직선거리:** `{target_place.get('dist', 0):.2f} km`")
         m_col2.markdown(f"🎟️ **{cost_label}:** `{admission_str}`")
 
-with col_main:
-    route_info = get_kakao_car_directions(cur_lat, cur_lon, target_place["lat"], target_place["lon"])
-    linear_dist = target_place.get("dist", 0)
-    driving_dist = route_info["distance"] if route_info else round(linear_dist * 1.3, 1)
-    car_time = route_info["duration"] if route_info else round(linear_dist * 2.8) + 5
-    toll_fare = route_info["toll"] if route_info else 0
+# 9. 메인 영역: 여정 브리핑 & 전체 지도 & 환율 계산기 (넓은 풀 와이드 화면)
+route_info = get_kakao_car_directions(cur_lat, cur_lon, target_place["lat"], target_place["lon"])
+linear_dist = target_place.get("dist", 0)
+driving_dist = route_info["distance"] if route_info else round(linear_dist * 1.3, 1)
+car_time = route_info["duration"] if route_info else round(linear_dist * 2.8) + 5
+toll_fare = route_info["toll"] if route_info else 0
 
-    fuel_cost = calculate_fuel_cost(driving_dist)
-    transit_fare = calculate_transit_fare(linear_dist)
-    transit_time = max(round(linear_dist / 18 * 60) + 7, 10)
-    admission_fee = target_place.get("admission", 0)
+fuel_cost = calculate_fuel_cost(driving_dist)
+transit_fare = calculate_transit_fare(linear_dist)
+transit_time = max(round(linear_dist / 18 * 60) + 7, 10)
+admission_fee = target_place.get("admission", 0)
 
-    # 상단 요약 카드
-    with st.container(border=True):
-        st.markdown(f"#### 🚗 여정 브리핑: `{base_loc_label}` ➡️ `{target_place['name']}`")
+# 상단 여정 요약 브리핑 카드
+with st.container(border=True):
+    st.markdown(f"#### 🚗 여정 브리핑: `{base_loc_label}` ➡️ `{target_place['name']}`")
 
-        info_col1, info_col2, info_col3 = st.columns(3)
-        with info_col1:
-            st.markdown(f"**직선거리:** {linear_dist:.2f} km")
-            st.markdown(f"**실제 주행거리:** {driving_dist} km")
-        with info_col2:
-            st.markdown(f"**🚗 자차 이동:** 약 **{car_time}분**")
-            st.markdown(f"**🚌 대중교통:** 약 **{transit_time}분**")
-        with info_col3:
-            st.markdown(f"**자차 경비: 약 {(fuel_cost + toll_fare + admission_fee):,}원**")
-            st.caption(f"주유비 {fuel_cost:,}원 + 통행료 {toll_fare:,}원 + 입장료 {admission_fee:,}원")
-            st.markdown(f"**대중교통 경비: 약 {(transit_fare + admission_fee):,}원**")
-            st.caption(f"교통카드 요금 {transit_fare:,}원 + 입장료 {admission_fee:,}원")
+    info_col1, info_col2, info_col3 = st.columns(3)
+    with info_col1:
+        st.markdown(f"**직선거리:** {linear_dist:.2f} km")
+        st.markdown(f"**실제 주행거리:** {driving_dist} km")
+    with info_col2:
+        st.markdown(f"**🚗 자차 이동:** 약 **{car_time}분**")
+        st.markdown(f"**🚌 대중교통:** 약 **{transit_time}분**")
+    with info_col3:
+        st.markdown(f"**자차 경비: 약 {(fuel_cost + toll_fare + admission_fee):,}원**")
+        st.caption(f"주유비 {fuel_cost:,}원 + 통행료 {toll_fare:,}원 + 입장료 {admission_fee:,}원")
+        st.markdown(f"**대중교통 경비: 약 {(transit_fare + admission_fee):,}원**")
+        st.caption(f"교통카드 요금 {transit_fare:,}원 + 입장료 {admission_fee:,}원")
 
-    mid_lat = (cur_lat + target_place["lat"]) / 2
-    mid_lon = (cur_lon + target_place["lon"]) / 2
-    waypoint_attractions = search_nearby_attractions(mid_lat, mid_lon, radius=2500)
+mid_lat = (cur_lat + target_place["lat"]) / 2
+mid_lon = (cur_lon + target_place["lon"]) / 2
+waypoint_attractions = search_nearby_attractions(mid_lat, mid_lon, radius=2500)
 
-    travel_map = folium.Map(location=[mid_lat, mid_lon], zoom_start=12, tiles="OpenStreetMap")
+travel_map = folium.Map(location=[mid_lat, mid_lon], zoom_start=12, tiles="OpenStreetMap")
 
-    # 출발지 마커
-    folium.Marker(
-        location=[cur_lat, cur_lon],
-        tooltip=f"출발: {base_loc_label}",
-        popup=f"<b>[출발] {base_loc_label}</b>",
-        icon=folium.Icon(color="green", icon="user", prefix="fa"),
+# 출발지 마커
+folium.Marker(
+    location=[cur_lat, cur_lon],
+    tooltip=f"출발: {base_loc_label}",
+    popup=f"<b>[출발] {base_loc_label}</b>",
+    icon=folium.Icon(color="green", icon="user", prefix="fa"),
+).add_to(travel_map)
+
+# 목적지 마커
+is_restaurant = target_place.get("category") == "맛집/미식"
+m_color = "orange" if is_restaurant else "purple"
+m_icon = "cutlery" if is_restaurant else "flag"
+
+folium.Marker(
+    location=[target_place["lat"], target_place["lon"]],
+    tooltip=f"목적지: {target_place['name']}",
+    popup=f"<b>[목적지] {target_place['name']}</b><br>{target_place.get('desc', '')}",
+    icon=folium.Icon(color=m_color, icon=m_icon, prefix="fa"),
+).add_to(travel_map)
+
+# 실제 주행 경로 PolyLine
+if route_info and route_info["path"]:
+    folium.PolyLine(
+        locations=route_info["path"],
+        color="#2563EB",
+        weight=5,
+        opacity=0.85,
+        tooltip=f"{driving_dist}km / 약 {car_time}분 소요",
+    ).add_to(travel_map)
+else:
+    folium.PolyLine(
+        locations=[[cur_lat, cur_lon], [target_place["lat"], target_place["lon"]]],
+        color="gray",
+        weight=3,
+        dash_array="5, 8",
     ).add_to(travel_map)
 
-    # 목적지 마커
-    is_restaurant = target_place.get("category") == "맛집/미식"
-    m_color = "orange" if is_restaurant else "purple"
-    m_icon = "cutlery" if is_restaurant else "flag"
+for p in filtered_places:
+    if p["name"] != target_name:
+        p_desc = p.get("desc") or p.get("admission_desc") or ""
+        p_is_food = p.get("category") == "맛집/미식"
+        p_color = "orange" if p_is_food else "blue"
+        p_icon = "cutlery" if p_is_food else "info-sign"
 
-    folium.Marker(
-        location=[target_place["lat"], target_place["lon"]],
-        tooltip=f"목적지: {target_place['name']}",
-        popup=f"<b>[목적지] {target_place['name']}</b><br>{target_place.get('desc', '')}",
-        icon=folium.Icon(color=m_color, icon=m_icon, prefix="fa"),
-    ).add_to(travel_map)
-
-    # 실제 주행 경로 PolyLine
-    if route_info and route_info["path"]:
-        folium.PolyLine(
-            locations=route_info["path"],
-            color="#2563EB",
-            weight=5,
-            opacity=0.85,
-            tooltip=f"{driving_dist}km / 약 {car_time}분 소요",
-        ).add_to(travel_map)
-    else:
-        folium.PolyLine(
-            locations=[[cur_lat, cur_lon], [target_place["lat"], target_place["lon"]]],
-            color="gray",
-            weight=3,
-            dash_array="5, 8",
-        ).add_to(travel_map)
-
-    for p in filtered_places:
-        if p["name"] != target_name:
-            p_desc = p.get("desc") or p.get("admission_desc") or ""
-            p_is_food = p.get("category") == "맛집/미식"
-            p_color = "orange" if p_is_food else "blue"
-            p_icon = "cutlery" if p_is_food else "info-sign"
-
-            folium.Marker(
-                location=[p["lat"], p["lon"]],
-                tooltip=p["name"],
-                popup=f"<b>{p['name']}</b><br>{p_desc}",
-                icon=folium.Icon(color=p_color, icon=p_icon, prefix="fa" if p_is_food else None),
-            ).add_to(travel_map)
-
-    for att in waypoint_attractions:
         folium.Marker(
-            location=[att["lat"], att["lon"]],
-            tooltip=f"추천 경유지: {att['name']}",
-            popup=f"<b>[추천 경유] {att['name']}</b><br>{att['address']}",
-            icon=folium.Icon(color="cadetblue", icon="star"),
+            location=[p["lat"], p["lon"]],
+            tooltip=p["name"],
+            popup=f"<b>{p['name']}</b><br>{p_desc}",
+            icon=folium.Icon(color=p_color, icon=p_icon, prefix="fa" if p_is_food else None),
         ).add_to(travel_map)
 
-    # 지도 렌더링
-    st_folium(travel_map, width="100%", height=560, returned_objects=[])
+for att in waypoint_attractions:
+    folium.Marker(
+        location=[att["lat"], att["lon"]],
+        tooltip=f"추천 경유지: {att['name']}",
+        popup=f"<b>[추천 경유] {att['name']}</b><br>{att['address']}",
+        icon=folium.Icon(color="cadetblue", icon="star"),
+    ).add_to(travel_map)
 
-    # 지도 하단 8개국 환율 계산기
-    with st.expander("💱 해외 관광객용 원화(KRW) 환율 계산기 (8개국 통화 지원)", expanded=False):
-        rates = get_exchange_rates("USD")
-        if rates:
-            krw_val = rates.get("KRW", 1340)
+# 전체 너비 지도 렌더링
+st_folium(travel_map, width="100%", height=560, returned_objects=[])
 
-            currency_converters = {
-                "USD": rates.get("USD", 1.0) / krw_val,
-                "JPY": rates.get("JPY", 150.0) / krw_val,
-                "EUR": rates.get("EUR", 0.9) / krw_val,
-                "CNY": rates.get("CNY", 7.2) / krw_val,
-                "TWD": rates.get("TWD", 32.0) / krw_val,
-                "HKD": rates.get("HKD", 7.8) / krw_val,
-                "GBP": rates.get("GBP", 0.78) / krw_val,
-                "SGD": rates.get("SGD", 1.34) / krw_val,
-            }
+# 8개국 환율 계산기
+with st.expander("💱 해외 관광객용 원화(KRW) 환율 계산기 (8개국 통화 지원)", expanded=False):
+    rates = get_exchange_rates("USD")
+    if rates:
+        krw_val = rates.get("KRW", 1340)
 
-            default_calc = int(fuel_cost + toll_fare + admission_fee) if (fuel_cost + toll_fare + admission_fee) > 0 else 30000
-            calc_krw = st.number_input("사용 금액 입력 (KRW 원)", min_value=0, value=default_calc, step=5000)
+        currency_converters = {
+            "USD": rates.get("USD", 1.0) / krw_val,
+            "JPY": rates.get("JPY", 150.0) / krw_val,
+            "EUR": rates.get("EUR", 0.9) / krw_val,
+            "CNY": rates.get("CNY", 7.2) / krw_val,
+            "TWD": rates.get("TWD", 32.0) / krw_val,
+            "HKD": rates.get("HKD", 7.8) / krw_val,
+            "GBP": rates.get("GBP", 0.78) / krw_val,
+            "SGD": rates.get("SGD", 1.34) / krw_val,
+        }
 
-            c1, c2, c3, c4 = st.columns(4)
-            c1.metric("🇺🇸 미국 (USD)", f"${calc_krw * currency_converters['USD']:,.2f}")
-            c2.metric("🇯🇵 일본 (JPY)", f"¥{calc_krw * currency_converters['JPY']:,.0f}")
-            c3.metric("🇪🇺 유럽 (EUR)", f"€{calc_krw * currency_converters['EUR']:,.2f}")
-            c4.metric("🇨🇳 중국 (CNY)", f"¥{calc_krw * currency_converters['CNY']:,.2f}")
+        default_calc = int(fuel_cost + toll_fare + admission_fee) if (fuel_cost + toll_fare + admission_fee) > 0 else 30000
+        calc_krw = st.number_input("사용 금액 입력 (KRW 원)", min_value=0, value=default_calc, step=5000)
 
-            c5, c6, c7, c8 = st.columns(4)
-            c5.metric("🇹🇼 대만 (TWD)", f"NT${calc_krw * currency_converters['TWD']:,.1f}")
-            c6.metric("🇭🇰 홍콩 (HKD)", f"HK${calc_krw * currency_converters['HKD']:,.2f}")
-            c7.metric("🇬🇧 영국 (GBP)", f"£{calc_krw * currency_converters['GBP']:,.2f}")
-            c8.metric("🇸🇬 싱가포르 (SGD)", f"S${calc_krw * currency_converters['SGD']:,.2f}")
-        else:
-            st.info("환율 정보를 불러올 수 없습니다.")
+        c1, c2, c3, c4 = st.columns(4)
+        c1.metric("🇺🇸 미국 (USD)", f"${calc_krw * currency_converters['USD']:,.2f}")
+        c2.metric("🇯🇵 일본 (JPY)", f"¥{calc_krw * currency_converters['JPY']:,.0f}")
+        c3.metric("🇪🇺 유럽 (EUR)", f"€{calc_krw * currency_converters['EUR']:,.2f}")
+        c4.metric("🇨🇳 중국 (CNY)", f"¥{calc_krw * currency_converters['CNY']:,.2f}")
 
-    # 경유지 추천
-    if waypoint_attractions:
-        with st.expander("📍 경로 중간에 들르기 좋은 추천 스팟", expanded=False):
-            w_cols = st.columns(len(waypoint_attractions))
-            for idx, item in enumerate(waypoint_attractions):
-                with w_cols[idx]:
-                    st.markdown(f"**{item['name']}**")
-                    st.caption(item["address"])
-                    if item.get("url"):
-                        st.markdown(f"[카카오맵 보기]({item['url']})")
+        c5, c6, c7, c8 = st.columns(4)
+        c5.metric("🇹🇼 대만 (TWD)", f"NT${calc_krw * currency_converters['TWD']:,.1f}")
+        c6.metric("🇭🇰 홍콩 (HKD)", f"HK${calc_krw * currency_converters['HKD']:,.2f}")
+        c7.metric("🇬🇧 영국 (GBP)", f"£{calc_krw * currency_converters['GBP']:,.2f}")
+        c8.metric("🇸🇬 싱가포르 (SGD)", f"S${calc_krw * currency_converters['SGD']:,.2f}")
+    else:
+        st.info("환율 정보를 불러올 수 없습니다.")
+
+# 추천 경유지 아코디언
+if waypoint_attractions:
+    with st.expander("📍 경로 중간에 들르기 좋은 추천 스팟", expanded=False):
+        w_cols = st.columns(len(waypoint_attractions))
+        for idx, item in enumerate(waypoint_attractions):
+            with w_cols[idx]:
+                st.markdown(f"**{item['name']}**")
+                st.caption(item["address"])
+                if item.get("url"):
+                    st.markdown(f"[카카오맵 보기]({item['url']})")
