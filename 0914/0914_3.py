@@ -12,6 +12,44 @@ from streamlit_js_eval import get_geolocation
 # 1. 페이지 설정
 st.set_page_config(page_title="서울 여행 가이드 & 스마트 루트 플래너", layout="wide")
 
+# 가로 스크롤 칩 필터용 커스텀 CSS 주입
+st.markdown(
+    """
+    <style>
+    /* st.pills 컨테이너를 가로 스크롤 가능하게 설정 */
+    div[data-testid="stPills"] > div {
+        display: flex !important;
+        flex-wrap: nowrap !important;
+        overflow-x: auto !important;
+        gap: 8px !important;
+        padding-bottom: 8px !important;
+        -webkit-overflow-scrolling: touch;
+    }
+    /* 가로 스크롤 칩 항목이 줄바꿈되지 않고 형태 유지 */
+    div[data-testid="stPills"] button {
+        white-space: nowrap !important;
+        flex-shrink: 0 !important;
+    }
+    /* 얇고 세련된 스크롤바 디자인 */
+    div[data-testid="stPills"] > div::-webkit-scrollbar {
+        height: 6px;
+    }
+    div[data-testid="stPills"] > div::-webkit-scrollbar-track {
+        background: #F1F5F9;
+        border-radius: 4px;
+    }
+    div[data-testid="stPills"] > div::-webkit-scrollbar-thumb {
+        background: #CBD5E1;
+        border-radius: 4px;
+    }
+    div[data-testid="stPills"] > div::-webkit-scrollbar-thumb:hover {
+        background: #94A3B8;
+    }
+    </style>
+    """,
+    unsafe_allow_html=True,
+)
+
 # 2. 환경변수 및 Secrets 로드 (로컬 .env & Streamlit Cloud 완벽 호환)
 ROOT_DIR = Path(__file__).resolve().parent.parent
 ENV_FILE = ROOT_DIR / ".env"
@@ -49,7 +87,7 @@ if not KAKAO_KEY:
     st.stop()
 
 st.title("🧭 서울 여행 가이드 & 스마트 루트 플래너")
-st.caption("실시간 날씨와 8개국 환율, 직관적인 칩 필터, 상세 이동 경로 및 예산 분석을 지원합니다.")
+st.caption("실시간 날씨와 8개국 환율, 가로 스크롤 칩 필터, 상세 이동 경로 및 예산 분석을 지원합니다.")
 st.divider()
 
 
@@ -255,7 +293,7 @@ if forecast:
 st.divider()
 
 # 6. 테마별 10곳씩 총 60곳 엄선 데이터셋
-DATASET_VERSION = "v3.0_60_places"
+DATASET_VERSION = "v3.1_60_places"
 
 theme_places_60 = [
     # --- [1] 궁궐/역사 (10곳) ---
@@ -402,7 +440,7 @@ col_nav, col_main = st.columns([1.1, 1.9], gap="large")
 with col_nav:
     st.subheader("🎯 목적지 탐색 & 선택")
 
-    # 1) 최신 스타일의 이모지 칩(Pills) 필터
+    # 가로 스크롤 가능한 칩 필터 바
     categories = [
         "전체",
         "궁궐/역사 🏯",
@@ -429,11 +467,11 @@ with col_nav:
     )
 
     st.markdown(
-        f"<div style='margin-bottom:8px; font-size:13px; color:#64748B;'>총 <b>{len(filtered_places)}곳</b>의 명소가 있습니다.</div>",
+        f"<div style='margin-top:4px; margin-bottom:8px; font-size:13px; color:#64748B;'>총 <b>{len(filtered_places)}곳</b>의 명소가 있습니다. (좌우로 스크롤하여 테마 탐색)</div>",
         unsafe_allow_html=True,
     )
 
-    # 2) 긴 라디오 대신 거리 정보가 포함된 드롭다운 셀렉트박스
+    # 거리 정보가 포함된 드롭다운 셀렉트박스
     place_dict = {
         f"{p['name']} ({p['dist']:.1f}km)": p["name"]
         for p in filtered_places
@@ -451,7 +489,7 @@ with col_nav:
         )
         target_name = place_dict[selected_display]
 
-    # 3) 선택된 장소 상세 프리뷰 카드
+    # 선택된 장소 상세 프리뷰 카드
     target_place = next(p for p in sorted_places if p["name"] == target_name)
     with st.container(border=True):
         t_col1, t_col2 = st.columns([3, 1])
