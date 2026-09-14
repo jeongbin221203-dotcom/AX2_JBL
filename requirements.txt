@@ -6,3 +6,5 @@ requests
 urllib3
 pypdf
 folium
+streamlit-folium
+streamlit-js-eval
