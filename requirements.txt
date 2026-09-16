@@ -8,3 +8,5 @@ pypdf
 folium
 streamlit-folium
 streamlit-js-eval
+BeautifulSoup4
+flask requests
